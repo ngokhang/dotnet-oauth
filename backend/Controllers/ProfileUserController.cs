@@ -14,15 +14,16 @@ namespace LearnOAuth.Controllers
   [Route("api/profile")]
   public class ProfileUserController : ControllerBase
   {
-    private UserOAuthServices userOAuthServices;
+    private UserServices UserServices;
     private readonly JwtServices jwtServices;
 
-    public ProfileUserController(UserOAuthServices userServices, JwtServices _jwtServices)
+    public ProfileUserController(UserServices userServices, JwtServices _jwtServices)
     {
-      userOAuthServices = userServices;
+      UserServices = userServices;
       jwtServices = _jwtServices;
     }
 
+    [Authorize(Roles = "user, admin")]
     [HttpGet("me")]
     public async Task<ActionResult> GetProfile([FromHeader] string accessToken)
     {
@@ -30,7 +31,7 @@ namespace LearnOAuth.Controllers
       if (isTokenValid)
       {
         var username = jwtServices.GetDataFromToken(accessToken);
-        var responseData = await userOAuthServices.GetUserByUsername(username);
+        var responseData = await UserServices.GetUserByUsername(username);
 
         return Ok(new
         {

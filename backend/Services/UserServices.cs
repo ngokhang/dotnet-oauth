@@ -9,10 +9,10 @@ using MongoDB.Driver;
 
 namespace LearnOAuth.Services
 {
-  public class UserOAuthServices
+  public class UserServices
   {
     private readonly IMongoCollection<User> _userCollection;
-    public UserOAuthServices(IOptions<AuthenticationDbSettting> authenticationDbSetting)
+    public UserServices(IOptions<AuthenticationDbSettting> authenticationDbSetting)
     {
       var mongoClient = new MongoClient(authenticationDbSetting.Value.ConnectionString);
       var mongoDatabase = mongoClient.GetDatabase(authenticationDbSetting.Value.DatabaseName);

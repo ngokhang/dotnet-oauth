@@ -13,12 +13,12 @@ namespace LearnOAuth.Controllers
   [Route("api/auth")]
   public class AuthController : ControllerBase
   {
-    private readonly UserOAuthServices userOAuthServices;
+    private readonly UserServices UserServices;
     private readonly JwtServices jwtServices;
 
-    public AuthController(UserOAuthServices _userOAuthServices, JwtServices _jwtServices)
+    public AuthController(UserServices _UserServices, JwtServices _jwtServices)
     {
-      userOAuthServices = _userOAuthServices;
+      UserServices = _UserServices;
       jwtServices = _jwtServices;
     }
 
@@ -26,7 +26,7 @@ namespace LearnOAuth.Controllers
     public async Task<ActionResult> PostCreateUser([FromBody] User userData)
     {
       string username = userData.username;
-      var userExisted = await userOAuthServices.GetUserByUsername(username);
+      var userExisted = await UserServices.GetUserByUsername(username);
       if (userExisted == null)
       {
         string passwordHashed = BCrypt.Net.BCrypt.HashPassword(userData.password);
@@ -37,8 +37,8 @@ namespace LearnOAuth.Controllers
           password = passwordHashed,
           Role = Role
         };
-        await userOAuthServices.CreateNewUserAsync(newUser);
-        return Ok(await userOAuthServices.GetUserByUsername(username));
+        await UserServices.CreateNewUserAsync(newUser);
+        return Ok(await UserServices.GetUserByUsername(username));
       }
       else
       {
@@ -51,7 +51,7 @@ namespace LearnOAuth.Controllers
     {
       string username = userData.username;
       string password = userData.password.Trim();
-      User userExisted = await userOAuthServices.GetUserByUsername(username);
+      User userExisted = await UserServices.GetUserByUsername(username);
 
       if (userExisted == null)
       {
@@ -63,7 +63,7 @@ namespace LearnOAuth.Controllers
         bool isValidPassword = BCrypt.Net.BCrypt.Verify(password, passwordHashed);
         if (isValidPassword)
         {
-          var dataUser = await userOAuthServices.GetUserByUsername(userData.username);
+          var dataUser = await UserServices.GetUserByUsername(userData.username);
           var responseData = new
           {
             username = dataUser.username,

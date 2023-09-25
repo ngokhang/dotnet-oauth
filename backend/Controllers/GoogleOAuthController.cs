@@ -14,7 +14,6 @@ using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-
 namespace LearnOAuth.Controllers
 {
   [ApiController]
@@ -23,13 +22,13 @@ namespace LearnOAuth.Controllers
   {
     private readonly IMapper _mapper;
     private readonly HttpServices httpServices;
-    private readonly UserOAuthServices userOAuthServices;
+    private readonly UserServices UserServices;
     private readonly JwtServices jwt;
-    public GoogleOAuthController(IMapper mapper, HttpServices _httpServices, UserOAuthServices _userOAuthServices, JwtServices _jwt)
+    public GoogleOAuthController(IMapper mapper, HttpServices _httpServices, UserServices _UserServices, JwtServices _jwt)
     {
       _mapper = mapper;
       httpServices = _httpServices;
-      userOAuthServices = _userOAuthServices;
+      UserServices = _UserServices;
       jwt = _jwt;
     }
     [HttpPost]
@@ -39,11 +38,12 @@ namespace LearnOAuth.Controllers
       return Ok(result);
     }
 
+    [Authorize(Roles = "user")]
     [HttpGet("me")]
     public async Task<ActionResult> Get([FromHeader] string Authorization)
     {
       var result = await httpServices.Get(Authorization);
-      var userExisted = await userOAuthServices.GetUserByGoogleId(result.Value.sub);
+      var userExisted = await UserServices.GetUserByGoogleId(result.Value.sub);
       if (userExisted == null)
       {
         var newUser = new User
@@ -53,7 +53,7 @@ namespace LearnOAuth.Controllers
           Role = "user",
           googleId = result.Value.sub
         };
-        await userOAuthServices.CreateNewUserAsync(newUser);
+        await UserServices.CreateNewUserAsync(newUser);
       }
       var user = _mapper.Map<User>(result.Value);
       var responseData = new

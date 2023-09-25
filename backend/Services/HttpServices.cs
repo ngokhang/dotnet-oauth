@@ -29,18 +29,14 @@ namespace LearnOAuth.Services
         try
         {
           HttpResponseMessage response = await client.GetAsync("/oauth2/v3/userinfo");
-          if (response.IsSuccessStatusCode)
-          {
-            var responseContent = await response.Content.ReadAsStringAsync();
-            var result = JsonConvert.DeserializeObject<UserProfile>(responseContent);
 
-            return result;
-          }
-          return null;
+          var responseContent = await response.Content.ReadAsStringAsync();
+          var result = JsonConvert.DeserializeObject<UserProfile>(responseContent);
+
+          return result;
         }
         catch (System.Exception)
         {
-
           throw;
         }
       }
