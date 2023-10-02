@@ -7,6 +7,10 @@ using LearnOAuth.Context;
 using LearnOAuth.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Abstractions;
+using Microsoft.AspNetCore.Mvc.Infrastructure;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -55,6 +59,27 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
     ValidAudience = builder.Configuration["Jwt:Audience"],
     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
   };
+
+  options.Events = new JwtBearerEvents
+  {
+    OnChallenge = async context =>
+    {
+      // Call this to skip the default logic and avoid using the default response
+      context.HandleResponse();
+
+      var httpContext = context.HttpContext;
+      var statusCode = StatusCodes.Status401Unauthorized;
+
+      var routeData = httpContext.GetRouteData();
+      var actionContext = new ActionContext(httpContext, routeData, new ActionDescriptor());
+
+      var factory = httpContext.RequestServices.GetRequiredService<ProblemDetailsFactory>();
+      var problemDetails = factory.CreateProblemDetails(httpContext, statusCode);
+
+      var result = new ObjectResult(problemDetails) { StatusCode = statusCode };
+      await result.ExecuteResultAsync(actionContext);
+    }
+  };
 });
 
 builder.Services.AddAuthorization(options =>
@@ -65,7 +90,6 @@ builder.Services.AddAuthorization(options =>
         {
           authBuilder.RequireRole("user");
         });
-
   });
 
 builder.Services.AddSingleton<HttpServices>();
@@ -80,17 +104,11 @@ if (app.Environment.IsDevelopment())
 {
   app.UseSwagger();
   app.UseSwaggerUI();
-  app.UseExceptionHandler("/error-development");
 }
-else
-{
-  app.UseExceptionHandler("/error");
-}
+
 
 app.UseCors("AllowSpecificOrigin");
 app.UseAuthentication();
-app.UseAuthorization();
-
 app.UseExceptionHandler(appError =>
 {
   appError.Run(async context =>
@@ -119,7 +137,7 @@ app.UseExceptionHandler(appError =>
         response = new APIResponseDTO<object>
         {
           ErrorCode = ErrorCodeEnum.Unexcepted,
-          Message = contextFuture.Error.Message
+          Message = contextFuture.Error.Message + " fucking code"
         };
       }
       var errorLog = JsonSerializer.Serialize(response, new JsonSerializerOptions
@@ -135,6 +153,9 @@ app.UseExceptionHandler(appError =>
     }
   });
 });
+app.UseAuthorization();
+
+
 
 app.UseHttpsRedirection();
 
